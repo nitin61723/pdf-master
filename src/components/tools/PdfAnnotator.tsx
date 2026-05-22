@@ -1,13 +1,15 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import * as pdfjs from "pdfjs-dist";
+import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import { fabric } from "fabric";
-import { Loader2, Type, MousePointer2, Pencil, Square, Circle, Eraser, Download, Save } from "lucide-react";
+import { Loader2, Type, MousePointer2, Pencil, Square, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Set up the worker for pdf.js (redundant but safe)
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/legacy/build/pdf.worker.min.mjs",
+  import.meta.url
+).toString();
 
 interface PdfAnnotatorProps {
   file: File;
@@ -20,29 +22,9 @@ export function PdfAnnotator({ file, onSave }: PdfAnnotatorProps) {
   const fabricRef = useRef<fabric.Canvas | null>(null);
   
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [activeTool, setActiveTool] = useState<"select" | "text" | "draw" | "rect" | "circle">("select");
-  const [pdfDoc, setPdfDoc] = useState<pdfjs.PDFDocumentProxy | null>(null);
-
-  useEffect(() => {
-    const initPdf = async () => {
-      setLoading(true);
-      try {
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
-        setPdfDoc(pdf);
-        setTotalPages(pdf.numPages);
-        await renderPage(pdf, 1);
-      } catch (err) {
-        console.error("Error loading PDF:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initPdf();
-  }, [file]);
 
   const renderPage = async (pdf: pdfjs.PDFDocumentProxy, pageNum: number) => {
     const page = await pdf.getPage(pageNum);
@@ -56,7 +38,8 @@ export function PdfAnnotator({ file, onSave }: PdfAnnotatorProps) {
 
     if (!tempContext) return;
 
-    await (page as any).render({
+    await page.render({
+      canvas: tempCanvas,
       canvasContext: tempContext,
       viewport: viewport,
     }).promise;
@@ -85,6 +68,24 @@ export function PdfAnnotator({ file, onSave }: PdfAnnotatorProps) {
       });
     }
   };
+
+  useEffect(() => {
+    const initPdf = async () => {
+      setLoading(true);
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+        setTotalPages(pdf.numPages);
+        await renderPage(pdf, 1);
+      } catch (err) {
+        console.error("Error loading PDF:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initPdf();
+  }, [file]);
 
   const handleToolChange = (tool: typeof activeTool) => {
     setActiveTool(tool);

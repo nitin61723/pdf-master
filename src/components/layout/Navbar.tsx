@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
-import { Search, Bell, Moon, Sun, LogOut, LogIn } from "lucide-react";
+import { Search, Bell, User, Moon, Sun, LogOut, LogIn } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/context/auth-context";
 
@@ -43,14 +42,7 @@ export function Navbar() {
           <div className="flex items-center gap-3">
             <button className="flex items-center gap-2 pl-2">
               {user.photoURL ? (
-                <Image
-                  src={user.photoURL}
-                  alt={user.displayName || ""}
-                  width={32}
-                  height={32}
-                  unoptimized
-                  className="h-8 w-8 rounded-full shadow-sm"
-                />
+                <img src={user.photoURL} alt={user.displayName || ""} className="h-8 w-8 rounded-full shadow-sm" />
               ) : (
                 <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
                   {(user.displayName || "U").charAt(0)}
